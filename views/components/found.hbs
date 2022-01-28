@@ -1,0 +1,84 @@
+<h1 class="display-4">Claim Item Form</h1>
+<form action="/report/found" method="post" enctype="multipart/form-data" class="mt-4" autocomplete="off">
+    <div class="row">
+        <div class="col-12 col-sm-12 col-md-6 col-lg-6 col-xl-6 border-end">
+            <p>
+                <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#extraDetails"
+                    aria-expanded="false" aria-controls="extraDetails">
+                    Extra Details
+                </button>
+            </p>
+            <div class="collapse" id="extraDetails">
+                <div class="card">
+                    <div class="card-header">
+                        Wallet
+                    </div>
+                    <div class="card-body"
+                        <h6 class="card-title">Yo</h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-12 col-md-6 col-lg-6 col-xl-6 border-start">
+            <div class="row mb-3">
+                <div class="col-12 col-sm-12 col-md-6 col-lg-6 col-xl-6">
+                    <div class="form-group">
+                        <label class="form-label" for="collectionDate">Collection Date</label>
+                        <input type="date" id="collectionDate" name="collectionDate" class="form-control"
+                            value="{{todayDate}}" required />
+                    </div>
+                </div>
+                <div class="col-12 col-sm-12 col-md-6 col-lg-6 col-xl-6">
+                    <div class="form-group">
+                        <label class="form-label" for="collectionTime">Collection Time</label>
+                        <input type="time" id="collectionTime" min="07:00" max="21:00" name="collectionTime"
+                            class="form-control" value="{{timeNow}}" required />
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-12 col-sm-12 col-md-6 col-lg-6 col-xl-6">
+                    <div class="form-group">
+                        <label class="form-label" for="ownerName">Owner Name</label>
+                        <input type="text" id="ownerName" placeholder="Name" name="ownerName" class="form-control"
+                            required />
+                    </div>
+                </div>
+                <div class="col-12 col-sm-12 col-md-6 col-lg-6 col-xl-6">
+                    <div class="form-group">
+                        <label class="form-label" for="ownerPhoneNumber">Claimer Phone Number</label>
+                        <input type="text" id="ownerPhoneNumber" placeholder="+65" name="ownerPhoneNumber" maxlength="8"
+                            class="form-control" required />
+                    </div>
+                </div>
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label" for="ownerEmail">Owner Email Address</label>
+                <input type="email" id="ownerEmail" placeholder="example@gmail.com" name="ownerEmail"
+                    class="form-control" required />
+            </div>
+            <div class="row">
+                <div class="col-12 col-sm-12 col-md-6 col-lg-6 col-xl-6">
+                    <div class="form-group  mb-3">
+                        <label class="form-label" for="releaseAttendant">Attendant's Name</label>
+                        <input type="text" id="releaseAttendant" placeholder="The staff releasing the item"
+                            name="releaseAttendant" class="form-control" required />
+                    </div>
+                </div>
+                <div class="col-12 col-sm-12 col-md-6 col-lg-6 col-xl-6">
+                    <div class="form-group">
+                        <label class="form-label" for="releaseAttendantId">Attendant Staff Code</label>
+                        <input type="text" id="releaseAttendantId" maxlength="6" placeholder="xxxxxx"
+                            name="releaseAttendantId" class="form-control" required />
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="form-group text-end mt-4">
+        <button type="reset" class="btn btn-secondary">Reset</button>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </div>
+</form>

@@ -1,8 +1,16 @@
 const router = require('express').Router();
 
 router.get(["/","/home"],(req,res) => {
-    console.log("yo");
-    res.send("yo");
+    const currentpage = 'home';
+    const title = "Home";
+    const data = require('./testdata.json');
+
+    const dataForFrontend = {
+        currentpage,
+        title,
+        data
+    }
+    res.render("components/home", dataForFrontend);
 });
 
 module.exports = router;
