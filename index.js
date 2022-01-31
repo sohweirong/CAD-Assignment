@@ -1,4 +1,5 @@
 // Requried libraries in project
+require("dotenv").config();
 const express = require('express');
 const {engine} = require('express-handlebars');
 const expressSession = require('express-session');
@@ -7,12 +8,13 @@ var methodOverride = require('method-override');
 const bodyParser = require("body-parser")
 const cors = require('cors');
 const path = require('path');
-const favicon = require("serve-favicon");
+const { commonGetObject } = require("./api/s3CommonAPI");
 // const DynamoDBStore = require('connect-dynamodb')(expressSession);
 // const credentials  = require('./config/Credential');
 
 // Routes
 const GeneralRoute = require('./route/General');
+const AuthRoute = require('./route/Auth');
 const ReportRoute = require('./route/Report');
 
 // Helpers
@@ -27,7 +29,6 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(methodOverride('_method'));
-app.use(favicon(path.join(__dirname, 'public/image/favicon.ico')));
 
 app.engine(
     'hbs',
@@ -69,6 +70,7 @@ app.use((req,res,next) => {
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', GeneralRoute);
+app.use('/auth',AuthRoute);
 app.use('/report',ReportRoute);
 
 /* 
