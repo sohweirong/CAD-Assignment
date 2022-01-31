@@ -1,18 +1,9 @@
 [
     {
-        "imgUrl": "https://i.imgur.com/Lxjr3e0.jpeg",
-        "productName": "Lost Human"        
-    },
-    {
-        "imgUrl": "https://i.imgur.com/Lxjr3e0.jpeg",
-        "productName": "Lost Human"        
-    },
-    {
-        "imgUrl": "https://i.imgur.com/Lxjr3e0.jpeg",
-        "productName": "Lost Human"        
-    },
-    {
-        "imgUrl": "https://i.imgur.com/Lxjr3e0.jpeg",
-        "productName": "Lost Human"        
+        "imgUrl": "https://i.imgur.com/YfPSIWy.jpeg",
+        "productName": "Wallet",
+        "lostLocation": "NYP Auditorium",
+        "lostFloor": "L1",
+        "itemDescription": "A black LV wallet found by a studet"
     }
 ]
