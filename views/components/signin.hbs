@@ -1,0 +1,24 @@
+<div class="w-50" style="margin-left:auto; margin-right: auto;">
+    <form action="/auth/signin" method="post">
+        <div class="card">
+            <div class="card-header">
+                <h1 class="display-4">Sign In</h1>
+            </div>
+            <div class="card-body my-3">
+                <div class="form-group mb-3">
+                    <label class="form-label" for="staffNumber">Staff ID</label>
+                    <input type="text" id="staffNumber" placeholder="xxxxxx" name="staffNumber"
+                        class="form-control" required />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="staffPassword">Password</label>
+                    <input type="text" id="staffPassword" placeholder="Your Password" name="staffPassword"
+                        class="form-control" required />
+                </div>
+            </div>
+            <div class="card-footer text-end">
+                <button type="submit" class="btn btn-primary">Sign In</button>
+            </div>
+        </div>
+    </form>
+</div>
