@@ -1,18 +1,18 @@
 <div class="w-50" style="margin-left:auto; margin-right: auto;">
-    <form action="/auth/signin" method="post">
+    <form action="/auth/signin" method="post" autocomplete="off" class="mt-4" autocomplete="off">
         <div class="card">
             <div class="card-header">
                 <h1 class="display-4">Sign In</h1>
             </div>
             <div class="card-body my-3">
                 <div class="form-group mb-3">
-                    <label class="form-label" for="staffNumber">Staff ID</label>
-                    <input type="text" id="staffNumber" placeholder="xxxxxx" name="staffNumber"
+                    <label class="form-label" for="staffUsername">Staff Email</label>
+                    <input type="text" id="staffUsername" placeholder="example@gmail.com" value="{{username}}" name="staffUsername"
                         class="form-control" required />
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="staffPassword">Password</label>
-                    <input type="text" id="staffPassword" placeholder="Your Password" name="staffPassword"
+                    <input type="password" id="staffPassword" placeholder="Your Password" name="staffPassword"
                         class="form-control" required />
                 </div>
             </div>
