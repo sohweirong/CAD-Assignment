@@ -3,9 +3,11 @@ const credential = {
 };
 
 if (process.env.NODE_ENV === "dev") {
-    credential["accessKeyId"] = process.env.aws_access_key_id
-    credential["secretAccessKey"] = process.env.aws_secret_access_key
-    credential["sessionToken"] = process.env.aws_session_token
+    credential["credentials"] = {
+        "accessKeyId": process.env.aws_access_key_id,
+        "secretAccessKey": process.env.aws_secret_access_key,
+        "sessionToken": process.env.aws_session_token,
+    };
 };
 
 exports.credential = credential;
