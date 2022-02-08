@@ -8,9 +8,8 @@ var methodOverride = require('method-override');
 const bodyParser = require("body-parser")
 const cors = require('cors');
 const path = require('path');
-const { commonGetObject } = require("./api/s3CommonAPI");
-// const DynamoDBStore = require('connect-dynamodb')(expressSession);
-// const credentials  = require('./config/Credential');
+const DynamoDBStore = require('connect-dynamodb')(expressSession);
+const { credential }  = require('./config/setup');
 
 // Routes
 const GeneralRoute = require('./route/General');
@@ -18,12 +17,12 @@ const AuthRoute = require('./route/Auth');
 const ReportRoute = require('./route/Report');
 
 // Helpers
-const {isHome} = require("./helper/helper");
+const { isHome } = require("./helper/helper");
 
 // Start of App Configs
 const app = express();
 const port = 3000;
-// const maxAge = 604800000;
+const maxAge = 3600000;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -44,29 +43,27 @@ app.engine(
 app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'views'));
 
-/*
 const session = {
     cookie: { maxAge },
-    secret: "test-secret",
+    secret: "secret",
     resave: false,
     saveUninitialized: false,
     store: new DynamoDBStore({
-        table: 'dynamodb-user-sessions',
-        AWSConfigJSON: credentials,
+        table: 'session',
+        AWSConfigJSON: credential,
     }),
 };
 
 app.use(expressSession(session));
-if (process.env.ENV !== "dev") {
+if (process.env.NODE_ENV !== "dev") {
     app.set('trust proxy', 1);
     session.cookie.secure = true;
 };
 
 app.use((req,res,next) => {
-    // res.locals.user = req.session.user;
+    res.locals.user = req.session.user;
     next();
 });
-*/
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', GeneralRoute);
