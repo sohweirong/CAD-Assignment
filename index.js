@@ -56,10 +56,6 @@ const session = {
 };
 
 app.use(expressSession(session));
-if (process.env.NODE_ENV !== "dev") {
-    app.set('trust proxy', 1);
-    session.cookie.secure = true;
-};
 
 app.use((req,res,next) => {
     res.locals.user = req.session.user;
