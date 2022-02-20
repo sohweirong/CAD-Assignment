@@ -1,0 +1,332 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  LocationFromAnywhere:
+    Description: The IP address range that can be used to SSH to the EC2 instances
+    Type: String
+    MinLength: '9'
+    MaxLength: '18'
+    Default: 0.0.0.0/0
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x
+
+Resources:
+  # Network Setup
+  ArtionVPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: artion-VPC
+        
+  
+  # All the public networks
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref ArtionVPC
+      Tags: 
+        - Key: Name
+          Value: artion-route-table-public
+        
+    DependsOn:
+      - ArtionVPC
+  
+  PublicSubnetOne: 
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: "10.0.0.0/24"
+      AvailabilityZone: !Sub
+          - ${region}a
+          - region: !Ref "AWS::Region"
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref ArtionVPC
+      Tags:
+        - Key: Name
+          Value: artion-subnet-public-one
+        
+    DependsOn: 
+      - ArtionVPC
+
+  PublicSubnetTwo: 
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: "10.0.1.0/24"
+      AvailabilityZone: !Sub
+          - ${region}b
+          - region: !Ref "AWS::Region"
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref ArtionVPC
+      Tags:
+        - Key: Name
+          Value: artion-subnet-public-two
+        
+    DependsOn: 
+      - ArtionVPC
+
+  IGW:
+    Type: AWS::EC2::InternetGateway
+    Properties: 
+      Tags: 
+        - Key: Name
+          Value: artion-igw
+        
+
+  IGWAssociation:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId : !Ref IGW
+      VpcId : !Ref ArtionVPC
+    DependsOn: 
+      - IGW
+      - ArtionVPC
+  
+  RTPublicAssociationOne:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnetOne
+    DependsOn:
+      - PublicRouteTable
+      - PublicSubnetOne
+  
+  RTPublicAssociationTwo:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnetTwo
+    DependsOn:
+      - PublicRouteTable
+      - PublicSubnetTwo
+    
+  RTPublicIGWAssociation:
+    Type: AWS::EC2::Route
+    Properties: 
+      DestinationCidrBlock: !Ref LocationFromAnywhere
+      GatewayId: !Ref IGW
+      RouteTableId: !Ref PublicRouteTable
+    DependsOn:
+      - IGW
+      - PublicRouteTable
+
+  # All the private networks
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      Tags: 
+        - Key: "Name"
+          Value: artion-route-table-private
+        
+      VpcId: !Ref ArtionVPC
+    DependsOn:
+      - ArtionVPC
+
+  PrivateSubnetOne: 
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: "10.0.2.0/24"
+      AvailabilityZone: !Sub
+          - ${region}a
+          - region: !Ref "AWS::Region"
+      VpcId: !Ref ArtionVPC
+      Tags:
+        - Key: Name
+          Value: artion-subnet-private-one
+        
+    DependsOn: 
+      - ArtionVPC
+
+  PrivateSubnetTwo: 
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: "10.0.3.0/24"
+      AvailabilityZone: !Sub
+          - ${region}b
+          - region: !Ref "AWS::Region"
+      VpcId: !Ref ArtionVPC
+      Tags:
+        - Key: Name
+          Value: artion-subnet-private-two
+        
+    DependsOn: 
+      - ArtionVPC
+  
+  ElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Tags: 
+        - Key: Name
+          Value: artion-elasticip
+        
+  
+  NAT:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt ElasticIP.AllocationId
+      SubnetId: !Ref PublicSubnetOne
+      Tags: 
+        - Key: Name
+          Value: artion-NAT-one
+        
+    DependsOn:
+      - ElasticIP
+      - PublicSubnetOne
+  
+  RTPrivateNATAssociation:
+    Type: AWS::EC2::Route
+    Properties: 
+      DestinationCidrBlock: !Ref LocationFromAnywhere
+      NatGatewayId: !Ref NAT
+      RouteTableId: !Ref PrivateRouteTable
+    DependsOn:
+      - NAT
+      - PrivateRouteTable
+  
+  RTPrivateAssociationOne:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnetOne
+    DependsOn:
+      - PrivateRouteTable
+      - PrivateSubnetOne
+  
+  RTPrivateAssociationTwo:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnetTwo
+    DependsOn:
+      - PrivateRouteTable
+      - PrivateSubnetTwo
+
+  ########################
+  # Security Group
+  ########################
+  SecurityGroupEC2:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: artion-sg-ec2
+      GroupDescription: Enable port 3000
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          SourceSecurityGroupId: !GetAtt SecurityGroupASG.GroupId
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: '0.0.0.0/0'
+      VpcId: !Ref ArtionVPC
+      Tags:
+        - Key: Name
+          Value: artion-sg-ec2
+    DependsOn:
+      - SecurityGroupASG
+      - ArtionVPC
+
+  SecurityGroupASG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: artion-sg-asg
+      GroupDescription: Enable port 3000 so any forward from LB will go to EC2 3000
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: !Ref LocationFromAnywhere
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !Ref LocationFromAnywhere
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: '0.0.0.0/0'
+      VpcId: !Ref ArtionVPC
+      Tags:
+        - Key: Name
+          Value: artion-sg-asg
+        
+    DependsOn:
+      - ArtionVPC
+
+  SecurityGroupSSH:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: artion-sg-ssh
+      GroupDescription: Enable port 22 and 80
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref LocationFromAnywhere
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: '0.0.0.0/0'
+      VpcId: !Ref ArtionVPC
+      Tags:
+        - Key: Name
+          Value: artion-sg-ssh
+        
+    DependsOn:
+      - ArtionVPC
+
+Outputs:
+  SecurityGroupEC2:
+    Description: HTTP Security Group that only allows 80 from ALB
+    Value: !Ref SecurityGroupEC2
+    Export:
+      Name:
+        'Fn::Sub': ${AWS::StackName}-SecurityGroupEC2
+  SecurityGroupASG:
+    Description: HTTP Security Group that only allows 80 from anywhere
+    Value: !Ref SecurityGroupASG
+    Export:
+      Name:
+        'Fn::Sub': ${AWS::StackName}-SecurityGroupASG
+  SecurityGroupSSH:
+    Description: SSH Security Group that only allows 22
+    Value: !Ref SecurityGroupSSH
+    Export:
+      Name:
+        'Fn::Sub': ${AWS::StackName}-SecurityGroupSSH
+
+  PrivateSubnetOne:
+    Description: The first private subnet
+    Value: !Ref PrivateSubnetOne
+    Export:
+      Name:
+        'Fn::Sub': ${AWS::StackName}-PrivateSubnetOne
+  PrivateSubnetTwo:
+    Description: The second private subnet
+    Value: !Ref PrivateSubnetTwo
+    Export:
+      Name:
+        'Fn::Sub': ${AWS::StackName}-PrivateSubnetTwo
+  
+  PublicSubnetOne:
+    Description: The first public subnet
+    Value: !Ref PublicSubnetOne
+    Export:
+      Name:
+        'Fn::Sub': ${AWS::StackName}-PublicSubnetOne
+  PublicSubnetTwo:
+    Description: The second public subnet
+    Value: !Ref PublicSubnetTwo
+    Export:
+      Name:
+        'Fn::Sub': ${AWS::StackName}-PublicSubnetTwo
+
+  VPC:
+    Description: The first private subnet
+    Value: !Ref ArtionVPC
+    Export:
+      Name:
+        'Fn::Sub': ${AWS::StackName}-VPC

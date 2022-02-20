@@ -1,0 +1,230 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  NetworkStackNameParameter:
+    Type: String
+    Default: "Network"
+  InstanceType:
+    Description: Allowed instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t1.micro
+      - t2.micro
+      - t3.micro
+      - t1.small
+      - t2.small
+      - t3.small
+      - t1.medium
+      - t2.medium
+      - t3.medium
+      - t1.large
+      - t2.large
+      - t3.large
+    ConstraintDescription: Accepted values are t1.micro t2.micro or t3.micro. Default is t2.micro.
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance.
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: "Can contain only ASCII characters."
+  LatestAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+    AllowedValues:
+      - /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-ebs
+      - /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+      - /aws/service/ami-amazon-linux-latest/amzn2-ami-minimal-hvm-x86_64-ebs
+      - /aws/service/ami-amazon-linux-latest/amzn-ami-hvm-x86_64-ebs
+      - /aws/service/ami-amazon-linux-latest/amzn-ami-hvm-x86_64-gp2
+      - /aws/service/ami-amazon-linux-latest/amzn-ami-hvm-x86_64-s3
+      - /aws/service/ami-amazon-linux-latest/amzn-ami-minimal-hvm-x86_64-ebs
+      - /aws/service/ami-amazon-linux-latest/amzn-ami-minimal-hvm-x86_64-s3
+
+Resources:
+  AppLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      IamInstanceProfile: arn:aws:iam::832581092596:instance-profile/LabInstanceProfile
+      ImageId: !Ref LatestAmiId
+      SecurityGroups:
+        - !ImportValue 
+            'Fn::Sub': '${NetworkStackNameParameter}-SecurityGroupEC2'
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      BlockDeviceMappings: 
+        - DeviceName: /dev/xvda
+          Ebs:
+            DeleteOnTermination: true
+            VolumeSize: 64
+            VolumeType: gp2
+            Encrypted: false       
+      UserData: 
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          export HomeFolder=/home/ec2-user
+          echo 'Setting up basics'
+          yum update -y
+          yum install git -y
+          git clone https://github.com/sohweirong/CAD-Assignment.git $HomeFolder/public_html
+
+          echo 'Setting up Node Environment'
+          git clone https://github.com/nvm-sh/nvm.git $HomeFolder/.nvm
+          git --work-tree=$HomeFolder/.nvm checkout v0.39.0
+          cat<<EOF >> $HomeFolder/.bashrc
+          export NVM_DIR="$HomeFolder/.nvm"
+          [ -s "\$NVM_DIR/nvm.sh" ] && \. "\$NVM_DIR/nvm.sh"
+          [ -s "\$NVM_DIR/bash_completion" ] && \. "\$NVM_DIR/bash_completion"
+          EOF
+          . $HomeFolder/.nvm/nvm.sh
+          nvm install node
+          npm install -g yarn
+          npm install -g pm2 
+
+          echo 'Starting Application'
+          export NODE_ENV=prod
+          yarn --cwd $HomeFolder/public_html/ install --production=true
+          pm2 startup
+          pm2 start $HomeFolder/public_html/app.js
+          pm2 save
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource AppLaunchConfig --configsets default --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScaler --region ${AWS::Region}
+  
+  AutoScaler:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        - !ImportValue 
+            'Fn::Sub': '${NetworkStackNameParameter}-PrivateSubnetOne'
+        - !ImportValue 
+            'Fn::Sub': '${NetworkStackNameParameter}-PrivateSubnetTwo'
+      LaunchConfigurationName: !Ref AppLaunchConfig
+      MinSize: 2
+      MaxSize: 4
+      DesiredCapacity: 2
+      TargetGroupARNs:
+        - !Ref TargetGroup
+      Tags:
+        - Key: Name
+          PropagateAtLaunch: true
+          Value: artion-instances
+        
+    DependsOn:
+      - TargetGroup
+      - AppLaunchConfig
+
+  AppScaleOutPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref AutoScaler
+      AdjustmentType: 'ChangeInCapacity'
+      Cooldown: 300
+      ScalingAdjustment: 1
+    DependsOn:
+      - AutoScaler
+
+  AppScaleInPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref AutoScaler
+      AdjustmentType: 'ChangeInCapacity'
+      Cooldown: 300
+      ScalingAdjustment: -1
+    DependsOn:
+      - AutoScaler
+  
+  AppScaleOutAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: artion-scaleout-alarm
+      AlarmActions:
+        - !Ref AppScaleOutPolicy
+      AlarmDescription: To monitor CPU usages and scale out if neccessary
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 2
+      MetricName: CPUUtilization 
+      Namespace: AWS/EC2
+      Statistic: 'Average'
+      Period: 300
+      Threshold: 90
+      Dimensions:
+        - Name: 'AutoScalingGroupName'
+          Value: !Ref AutoScaler
+      Unit: Percent
+    DependsOn:
+      - AutoScaler
+  
+  AppScaleInAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: artion-scalein-alarm
+      AlarmActions:
+        - !Ref AppScaleInPolicy
+      AlarmDescription: To monitor CPU usages and scale in if neccessary
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 2
+      MetricName: CPUUtilization 
+      Namespace: AWS/EC2
+      Statistic: 'Average'
+      Period: 300
+      Threshold: 75
+      Dimensions:
+        - Name: 'AutoScalingGroupName'
+          Value: !Ref AutoScaler
+      Unit: Percent
+    DependsOn:
+      - AutoScaler
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: artion-app-lb
+      TargetType: instance
+      Protocol: HTTP
+      Port: 3000
+      HealthyThresholdCount: 3
+      UnhealthyThresholdCount: 3
+      HealthCheckIntervalSeconds: 10
+      VpcId: !ImportValue 
+        'Fn::Sub': '${NetworkStackNameParameter}-VPC'
+      Tags:
+        - Key: Name
+          Value: artion-targetgroup
+
+  AppLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: artion-app-lb
+      Scheme: internet-facing
+      Type: application
+      IpAddressType: ipv4
+      SecurityGroups:
+        - !ImportValue 
+            'Fn::Sub': '${NetworkStackNameParameter}-SecurityGroupASG'
+      Subnets: 
+        - !ImportValue 
+            'Fn::Sub': '${NetworkStackNameParameter}-PublicSubnetOne'
+        - !ImportValue 
+            'Fn::Sub': '${NetworkStackNameParameter}-PublicSubnetTwo'
+      Tags:
+        - Key: Name
+          Value: artion-app-lb
+  
+  AppLBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref AppLoadBalancer
+      Port: 80
+      Protocol: HTTP 
+      DefaultActions: 
+        - Order: 1
+          Type: forward
+          TargetGroupArn: !Ref TargetGroup
+    DependsOn:
+      - AppLoadBalancer
+      - TargetGroup
+
+Outputs:
+  LoadBalancerURL:
+    Description: URL of the website
+    Value: !Join
+      - ''
+      - - 'http://'
+        - !GetAtt AppLoadBalancer.DNSName

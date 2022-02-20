@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  RoleArn:
+    Type: String
+    Default: arn:aws:iam::832581092596:role/LabRole
+
+Resources:
+  RekognitionFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: misplaced-miscellaneous
+        S3Key: LF/Rekognition.zip
+      FunctionName: Rekognition
+      Handler: Rekognition.lambda_handler
+      Role: !Ref RoleArn
+      Runtime: python3.9
+      Timeout: 60
+      MemorySize: 128
+  
+  RekognitionVersion:
+    Type: "AWS::Lambda::Version"
+    Properties:
+      FunctionName: !GetAtt RekognitionFunction.Arn
+  
+  RekognitionFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join
+        - ''
+        - - '/aws/lambda/'
+          -  !Ref RekognitionFunction
+      RetentionInDays: 14
+
+Outputs:
+  RekognitionFN:
+    Description: The ARN of the RekognitionFunction
+    Value: !Ref RekognitionVersion
+    Export:
+      Name:
+        'Fn::Sub': ${AWS::StackName}-RekognitionFunction

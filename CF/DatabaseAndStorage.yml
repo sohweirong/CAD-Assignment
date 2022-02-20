@@ -1,0 +1,159 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  NetworkStackNameParameter:
+    Type: String
+    Default: Network
+  LambdaStackNameParameter:
+    Type: String
+    Default: Lambda
+  ReadCapacityUnits:
+    Description: Provisioned read throughput
+    Type: Number
+    Default: '5'
+    MinValue: '5'
+    MaxValue: '10000'
+    ConstraintDescription: must be between 5 and 10000
+  WriteCapacityUnits:
+    Description: Provisioned write throughput
+    Type: Number
+    Default: '5'
+    MinValue: '5'
+    MaxValue: '10000'
+    ConstraintDescription: must be between 5 and 10000
+
+Resources:
+  CADBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: 191382s-cad
+      VersioningConfiguration:
+        "Status": "Enabled"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration: 
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: StandardIA
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 365
+            Transitions:
+              - StorageClass: STANDARD_IA
+                TransitionInDays: 30
+            NoncurrentVersionTransitions:
+              - StorageClass: STANDARD_IA
+                TransitionInDays: 30
+
+          - Id: OneZoneIA
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 365
+            Transitions:
+              - StorageClass: ONEZONE_IA
+                TransitionInDays: 180
+            NoncurrentVersionTransitions:
+              - StorageClass: ONEZONE_IA
+                TransitionInDays: 120
+
+          - Id: Glacier
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 365
+            Transitions:
+              - StorageClass: GLACIER
+                TransitionInDays: 365
+            NoncurrentVersionTransitions:
+              - StorageClass: GLACIER
+                TransitionInDays: 180
+
+          - Id: DeepArchive
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 365
+            Transitions:
+              - StorageClass: DEEP_ARCHIVE
+                TransitionInDays: 545
+            NoncurrentVersionTransitions:
+              - StorageClass: DEEP_ARCHIVE
+                TransitionInDays: 260
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: !ImportValue 
+              'Fn::Sub': '${LambdaStackNameParameter}-RekognitionFunction'
+    DependsOn:
+      - CADBucketInvokePermission
+
+  CADBucketInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !ImportValue 
+        'Fn::Sub': '${LambdaStackNameParameter}-RekognitionFunction'
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub 'arn:aws:s3:::191382s-cad'
+
+  CADBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref CADBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Principal: "*"
+            Action: 
+              - s3:GetObject
+              - s3:GetObjectVersion
+            Effect: "Allow"
+            Resource: !Join
+              - ''
+              - - "arn:aws:s3:::"
+                - !Ref CADBucket
+                - /*
+    DependsOn:
+      - CADBucket
+
+  # All dynamodb instances section
+  CADMainDatabase:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: 191382s-cad
+      AttributeDefinitions:
+        - AttributeName: case_id
+          AttributeType: S
+      BillingMode: PROVISIONED
+      KeySchema:
+        - AttributeName: case_id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+
+  CADCategoryDatabase:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: 191382s-cad-category
+      AttributeDefinitions:
+        - AttributeName: genre
+          AttributeType: S
+      BillingMode: PROVISIONED
+      KeySchema:
+        - AttributeName: genre
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+  
+Outputs:
+  CADBucket:
+    Description: The name of the main bucket
+    Value: !Ref CADBucket
+
+  CADMainDatabase:
+    Description: The name of the main bucket
+    Value: !Ref CADMainDatabase
+
+  CADCategoryDatabase:
+    Description: The name of the main bucket
+    Value: !Ref CADCategoryDatabase

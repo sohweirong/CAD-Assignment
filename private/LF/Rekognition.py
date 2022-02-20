@@ -20,33 +20,29 @@ def detect_labels(BucketName, ObjectKey, Case_ID):
     
     response = rekognition.detect_labels(Image={"S3Object": {"Bucket": BucketName, "Name": ObjectKey}}, MinConfidence=90)
     
-    possibleList = [];
+    possibleCategory = response["Labels"][0]["Name"]
     
-    for result in response["Labels"]:
-        possibleList.append(result["Name"]) 
-    
-    for i in possibleList:
-        tmpData = tableTwo.get_item(Key={"genre": i})
-        if "Item" in tmpData:
-            tableTwo.update_item(Key={"genre": i}, AttributeUpdates={
-                'count': {
-                    "Action": "PUT",
-                    "Value": tmpData["Item"]["count"] + 1
-                }
-            })
-        else:
-            tableTwo.update_item(Key={"genre": i}, AttributeUpdates={
-                'count': {
-                    "Action": "PUT",
-                    "Value": 1
-                }
-            })
+    tmpData = tableTwo.get_item(Key={"genre": possibleCategory})
+    if "Item" in tmpData:
+        tableTwo.update_item(Key={"genre": possibleCategory}, AttributeUpdates={
+            'count': {
+                "Action": "PUT",
+                "Value": tmpData["Item"]["count"] + 1
+            }
+        })
+    else:
+        tableTwo.update_item(Key={"genre": possibleCategory}, AttributeUpdates={
+            'count': {
+                "Action": "PUT",
+                "Value": 1
+            }
+        })
         
     
     response = tableOne.update_item(Key={"case_id": Case_ID}, AttributeUpdates={
         'category': {
             "Action": "PUT",
-            "Value": possibleList
+            "Value": possibleCategory
         }
     })
     
