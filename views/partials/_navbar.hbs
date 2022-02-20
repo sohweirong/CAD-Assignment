@@ -11,25 +11,30 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav" style="margin-right:auto;">
                     {{#if user}}
-                    <li class="nav-item {{#isHome currentpage "home"}}active{{/isHome}}">
+                    <li class="nav-item {{#isEqual currentpage "home"}}active{{/isEqual}}">
                         <a class="nav-link" href="/">
-                            Home {{#isHome currentpage "home"}}<span>(current)</span>{{/isHome}}
+                            Home {{#isEqual currentpage "home"}}<span>(current)</span>{{/isEqual}}
                         </a>
                     </li>
-                    <li class="nav-item {{#isHome currentpage "lost"}}active{{/isHome}}">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="pre_add_notification"> 
+                            Add Notification
+                        </a>
+                    </li>
+                    <li class="nav-item {{#isEqual currentpage "lost"}}active{{/isEqual}}">
                         <a class="nav-link" href="/report/lost">
-                            Report Lost {{#isHome currentpage "lost"}}<span>(current)</span>{{/isHome}}
-                        </a>
-                    </li>
-                    <li class="nav-item {{#isHome currentpage "found"}}active{{/isHome}}">
-                        <a class="nav-link" href="/report/found">
-                            Claim Item {{#isHome currentpage "found"}}<span>(current)</span>{{/isHome}}
+                            Report Lost {{#isEqual currentpage "lost"}}<span>(current)</span>{{/isEqual}}
                         </a>
                     </li>
                     {{else}}
-                    <li class="nav-item {{#isHome currentpage "home"}}active{{/isHome}}">
+                    <li class="nav-item {{#isEqual currentpage "home"}}active{{/isEqual}}">
                         <a class="nav-link" href="/">
-                            Home {{#isHome currentpage "home"}}<span>(current)</span>{{/isHome}}
+                            Home {{#isEqual currentpage "home"}}<span>(current)</span>{{/isEqual}}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="pre_add_notification">
+                            Add Notification
                         </a>
                     </li>
                     {{/if}}
@@ -42,9 +47,9 @@
                         </a>
                     </li>
                     {{else}}
-                    <li class="nav-item {{#isHome currentpage "signin"}}active{{/isHome}}">
+                    <li class="nav-item {{#isEqual currentpage "signin"}}active{{/isEqual}}">
                         <a class="nav-link" href="/auth/signin">
-                            Sign In {{#isHome currentpage "signin"}}<span>(current)</span>{{/isHome}}
+                            Sign In {{#isEqual currentpage "signin"}}<span>(current)</span>{{/isEqual}}
                         </a>
                     </li>
                     {{/if}}

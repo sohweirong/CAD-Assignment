@@ -32,19 +32,16 @@ router.get("/signout", async (req,res) => {
     const result = await Cognito.commonGlobalSignOut({
         AccessToken
     });
-    if (result["$metadata"].httpStatusCode === 200) {
-        req.session.destroy((err) => {
-            if (err) {
-                console.log(err);
-            };
-            return res.redirect("/auth/signin");
-        });
-    } else {
-        return res.redirect("/");
-    };
+    req.session.destroy((err) => {
+        if (err) {
+            console.log(err);
+        };
+        return res.redirect("/auth/signin");
+    });
 });
 
 router.post("/signin", async (req,res) => {
+    console.log(req.body);
     const currentpage = 'signin';
     const title = "Sign In";
     const {staffUsername, staffPassword} = req.body;

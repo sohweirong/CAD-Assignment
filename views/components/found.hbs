@@ -1,21 +1,22 @@
 <h1 class="display-4">Claim Item Form</h1>
-<form action="/report/found" method="post" enctype="multipart/form-data" class="mt-4" autocomplete="off">
+<form action="/report/found/{{data.case_id.S}}" method="post" class="mt-4" autocomplete="off">
     <div class="row">
         <div class="col-12 col-sm-12 col-md-6 col-lg-6 col-xl-6 border-end">
-            <p>
-                <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#extraDetails"
-                    aria-expanded="false" aria-controls="extraDetails">
-                    Extra Details
-                </button>
-            </p>
-            <div class="collapse" id="extraDetails">
-                <div class="card">
-                    <div class="card-header">
-                        Wallet
-                    </div>
-                    <div class="card-body"
-                        <h6 class="card-title">Yo</h6>
-                    </div>
+            <div class="card">
+                <img id="hiddenImage" src="https://{{data.bucket_information.M.bucketName.S}}.s3.amazonaws.com/{{data.bucket_information.M.key.S}}" alt="{{data.itemName.S}} thumbnail" class="card-img-top img-fluid">
+                <div class="card-body">
+                    <h6 class="card-title">Item Information:</h6>
+                    <h4 class="card-title">{{data.itemName.S}}</h6>
+                    <p class="text-muted">{{data.itemDescription.S}}</p>
+                    <br/>
+                    <h6 class="card-title">Date &amp; Time Found:</h6>
+                    <p>{{data.lostDate.S}} {{data.lostTime.S}}</p>
+                    <br/>
+                    <h6 class="card-title">Item Location &amp; Floor:</h6>
+                    <p>{{data.lostLocation.S}} [Level {{data.lostFloor.S}}]</p>
+                    <br/>
+                    <h6 class="card-title">Founder Information:</h6>
+                    <p>{{data.personnel_information.M.founderName.S}} ({{data.personnel_information.M.founderEmail.S}})</p>
                 </div>
             </div>
         </div>
@@ -25,7 +26,7 @@
                     <div class="form-group">
                         <label class="form-label" for="collectionDate">Collection Date</label>
                         <input type="date" id="collectionDate" name="collectionDate" class="form-control"
-                            value="{{todayDate}}" required />
+                            value="{{todayDate}}" max="{{maxDate}}" required />
                     </div>
                 </div>
                 <div class="col-12 col-sm-12 col-md-6 col-lg-6 col-xl-6">
@@ -39,19 +40,20 @@
             <div class="form-group mb-3">
                 <label class="form-label" for="ownerName">Owner Name</label>
                 <input type="text" id="ownerName" placeholder="Name" name="ownerName" class="form-control"
-                    required />
+                    value="{{ownerName}}" required />
             </div>
             <div class="form-group mb-3">
                 <label class="form-label" for="ownerEmail">Owner Email Address</label>
                 <input type="email" id="ownerEmail" placeholder="example@gmail.com" name="ownerEmail"
-                    class="form-control" required />
+                    class="form-control" value="{{ownerEmail}}" required />
                     
+            </div>
+            <div class="form-group text-end mt-4">
+                <button type="reset" class="btn btn-secondary">Reset</button>
+                <button type="submit" class="btn btn-primary">Submit</button>
             </div>
         </div>
     </div>
 
-    <div class="form-group text-end mt-4">
-        <button type="reset" class="btn btn-secondary">Reset</button>
-        <button type="submit" class="btn btn-primary">Submit</button>
-    </div>
+    
 </form>

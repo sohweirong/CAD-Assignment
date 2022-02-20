@@ -1,27 +1,117 @@
-<form action="/" method="post" enctype="multipart/form-data" class="mt-4" autocomplete="off">
-    <div class="row">
-        <div class="col-12 col-sm-9 col-md-9 col-lg-10 col-xl-10">
+<form action="/" method="post" class="mt-4" autocomplete="off">
+    <div class="row align-items-center">
+        <div class="col-12 col-sm-5 col-md-5 col-lg-5 col-xl-5">
             <div class="form-group">
-                <input type="text" id="searchThrough" placeholder="Search for item" name="searchThrough" class="form-control mb-4"/>
+                <input type="text" id="search" placeholder="Search for item" name="search"
+                    class="form-control" value="{{search}}"/>
             </div>
         </div>
-        <div class="col-12 col-sm-3 col-md-3 col-lg-2 col-xl-2">
-            <button type="submit" class="btn btn-primary btn-block w-100">Search</button>
+        <div
+            class="col-12 {{#unless user}}col-sm-3 col-md-3 col-lg-3 col-xl-3{{else}}col-sm-2 col-md-2 col-lg-2 col-xl-2{{/unless}}">
+            <select class="form-select" name="category" id="category">
+                <option value="ALL">-- Category --</option>
+                {{#if categories}}
+                {{#each categories}}
+                <option value="{{this}}" {{#isEqual this ../currentGenre}}selected{{/isEqual}}>{{this}}</option>
+                {{/each}}
+                {{/if}}
+            </select>
+        </div>
+        {{#if user}}
+        <div class="col-12 col-sm-2 col-md-2 col-lg-2 col-xl-2">
+            <select class="form-select" name="status" id="status">
+                <option value="ALL">-- Status --</option>
+                <option value="PENDING" {{#isEqual "PENDING" status}}selected{{/isEqual}}>Pending</option>
+                <option value="COMPLETE" {{#isEqual "COMPLETE" status}}selected{{/isEqual}}>Complete</option>
+            </select>
+        </div>
+        {{/if}}
+        <div
+            class="col-12 {{#unless user}}col-sm-3 col-md-3 col-lg-3 col-xl-3{{else}}col-sm-2 col-md-2 col-lg-2 col-xl-2{{/unless}}">
+            <input type="date" id="date" placeholder="Search for item" name="date"
+                class="form-control" value="{{filterDate}}" max="{{todayDate}}" />
+        </div>
+        <div class="col-12 col-sm-1 col-md-1 col-lg-1 col-xl-1">
+            <button type="submit" class="btn btn-info w-100">Search</button>
         </div>
     </div>
 </form>
-<h1 class="display-4">Misplaced</h1>
+<h1 class="display-4 mt-4">Misplaced</h1>
 <div class="row mt-4">
-    {{#each data}}
-    <div class="col-12 col-sm-12 col-md-6 col-lg-3 col-xl-3">
-        <div class="card w-100">
-            <img src="{{imgUrl}}" alt="" height="185rem" class="card-img-top">
-            <div class="card-body">
-                <h5 class="card-title">{{productName}}</h5>
-                <h6 class="card-subtitle mb-2 text-muted">Found at {{lostLocation}} [{{lostFloor}}]</h6>
-                <p class="card-text">{{itemDescription}}</p>
+    {{#if data}}
+        {{#each data}}
+            {{#if ../user}}
+            <div class="col-12 col-sm-12 col-md-6 col-lg-3 col-xl-3">
+                <div class="card w-100">
+                    <img src="https://{{bucket_information.M.bucketName.S}}.s3.amazonaws.com/{{bucket_information.M.key.S}}"
+                        alt="{{itemName.S}} thumbnail" height="185rem" class="card-img-top"
+                        style="object-fit: cover;"/>
+                    <div class="card-body">
+                        {{#isEqual status.S "PENDING"}}
+                        <h6 class="text-primary">[PENDING]</h6>
+                        {{else}}
+                        <h6 class="text-success">[COMPLETE]</h6>
+                        {{/isEqual}}
+                        <h5 class="card-title">{{itemName.S}}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">Found at {{lostLocation.S}} [Level
+                            {{lostFloor.S}}]</h6>
+                        <div class="mt-3 text-end">
+                            <div class="btn btn-secondary display-details" data-case-id="{{case_id.S}}">Details</div>
+                            {{#isEqual status.S "PENDING"}}
+                            <a href="/report/found/{{../case_id.S}}" class="btn btn-primary">Claim</a>
+                            {{/isEqual}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{else}}
+            <div class="col-12 col-sm-12 col-md-6 col-lg-3 col-xl-3">
+                <div class="card w-100">
+                    <img src="https://{{bucket_information.M.bucketName.S}}.s3.amazonaws.com/{{bucket_information.M.key.S}}"
+                        alt="{{itemName.S}} thumbnail" height="185rem" class="card-img-top"
+                        style="object-fit: cover;"/>
+                    <div class="card-body">
+                        <h5 class="card-title">{{itemName.S}}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">Found at {{lostLocation.S}} [Level
+                            {{lostFloor.S}}]</h6>
+                        <div class="mt-3 text-end">
+                            <div class="btn btn-secondary display-details" data-case-id="{{case_id.S}}">Details</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{/if}}
+        {{/each}}
+    {{else}}
+    <h1>No data</h1>
+    {{/if}}
+</div>
+
+<div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="pre_case_id">Case ID</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <img id="pre_thumbnail" class="w-100" alt="Lost Item Image"/>
+                <h6 class="card-title mt-3">Item Information:</h6>
+                <h4 id="pre_item_title" class="card-title">Item Title</h6>
+                <p id="pre_item_desc" class="text-muted">Item Description</p>
+                <br/>
+                <h6 class="card-title">Date &amp; Time Found:</h6>
+                <p id="pre_item_founddate">{{data.lostDate.S}} {{data.lostTime.S}}</p>
+                <br/>
+                <h6 class="card-title ">Item Location &amp; Floor:</h6>
+                <p id="pre_item_location">{{data.lostLocation.S}} [Level {{data.lostFloor.S}}]</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                {{#if user}}
+                <a id="pre_edit_item" class="btn btn-primary">Edit</a>
+                {{/if}}
             </div>
         </div>
     </div>
-    {{/each}}
 </div>

@@ -1,0 +1,30 @@
+<div class="modal fade" id="addNotificationModal" tabindex="-1" aria-labelledby="addNotificationModal"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Notification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertBox" class="alert alert-primary alert-dismissible fade show d-none" role="alert">
+                    <p id="alertMsg" class="p-0 m-0"></p>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <p class="text-muted">This email notification will keep you posted of the latest item posted.</p>
+                <form id="addNotificationForm" action="/addnotif" method="POST">
+                    <div class="form-group">
+                        <label class="form-label" for="notificationEmail">Your Email</label>
+                        <input type="email" id="notificationEmail" placeholder="example@gmail.com"
+                            name="notificationEmail" class="form-control" required />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" form="addNotificationForm" class="btn btn-secondary"
+                    data-bs-dismiss="modal">Close</button>
+                <button type="submit" form="addNotificationForm" class="btn btn-primary">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>

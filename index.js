@@ -17,7 +17,7 @@ const AuthRoute = require('./route/Auth');
 const ReportRoute = require('./route/Report');
 
 // Helpers
-const { isHome } = require("./helper/helper");
+const { isEqual, isContain } = require("./helper/helper");
 
 // Start of App Configs
 const app = express();
@@ -33,7 +33,8 @@ app.engine(
     'hbs',
     engine({
         helpers: {
-            isHome
+            isEqual,
+            isContain
         },
         defaultLayout: 'main',
         extname: '.hbs',
