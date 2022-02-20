@@ -51,19 +51,39 @@ router.post("/", (req,res) => {
         attrVal[":search"] = { "S": search };
     };
 
-    if (status.length > 0 && status !== "ALL") {
+    if (category && category !== "ALL") {
         if (search.length > 0) {
+            filterExp += " AND #category = :category";
+        } else {
+            filterExp += "#category = :category";
+        };
+
+        attrName["#category"] = "category";
+        attrVal[":category"] = { "S": category }
+    };
+
+    if (status && status !== "ALL") {
+        if ((search.length > 0) || (category && category !== "ALL")) {
             filterExp += " AND #status = :status";
         } else {
             filterExp += "#status = :status";
         };
         
         attrName["#status"] = "status";
-        attrVal[":status"] = { "S": status }
+        attrVal[":status"] = { "S": status };
+    } else if (!status && !req.session.user) {
+        if ((search.length > 0) || (category && category !== "ALL")) {
+            filterExp += " AND #status = :status";
+        } else {
+            filterExp += "#status = :status";
+        };
+        
+        attrName["#status"] = "status";
+        attrVal[":status"] = { "S": "PENDING" };
     };
 
     if (date.length > 0){
-        if ((search.length > 0) || (status.length > 0 && status !== "ALL")) {
+        if ((search.length > 0) || (category && category !== "ALL") || (status && status !== "ALL")) {
             filterExp += " AND #date = :date";
         } else {
             filterExp += "#date = :date";
