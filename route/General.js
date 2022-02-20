@@ -101,7 +101,7 @@ router.post("/", (req,res) => {
             dynamodbParam["FilterExpression"] = filterExp;
             dynamodbParam["ExpressionAttributeNames"] = attrName;
             dynamodbParam["ExpressionAttributeValues"] = attrVal;
-        }
+        };
 
         const dataForFrontend = {
             currentpage,
